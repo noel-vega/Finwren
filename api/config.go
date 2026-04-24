@@ -22,7 +22,7 @@ func NewConfig() (*Config, error) {
 		return nil, errors.New("PORT is invalid")
 	}
 
-	dbConnectionString := os.Getenv("DATABASE_URL")
+	dbConnectionString := os.Getenv("DATABASE_CONNECTION_STRING")
 	if dbConnectionString == "" {
 		return nil, errors.New("DATABASE_CONNECTION_STRING not set")
 	}

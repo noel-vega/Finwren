@@ -1,12 +1,17 @@
 package auth
 
-import "github.com/noel-vega/finances/api/internal/user"
+import (
+	"context"
+
+	"github.com/noel-vega/finances/api/internal/user"
+	"golang.org/x/crypto/bcrypt"
+)
 
 type Service struct {
-	userService user.Service
+	userService *user.Service
 }
 
-func NewService(userService user.Service) *Service {
+func NewService(userService *user.Service) *Service {
 	return &Service{
 		userService,
 	}
@@ -15,31 +20,22 @@ func NewService(userService user.Service) *Service {
 func (s *Service) SignIn() {}
 
 type SignUpParams struct {
-	Email           string
-	FirstName       string
-	LastName        string
-	Password        string
-	ConfirmPassword string
+	Email     string
+	FirstName string
+	LastName  string
+	Password  string
 }
 
-func (p *SignUpParams) Validate() map[string]validationIssue {
-	issues := map[string]validationIssue{}
-}
-
-type validationIssue struct {
-	Error   string `json:"error"`
-	Message string `json:"message,omitempty"`
-}
-
-func (s *Service) SignUp(params SignUpParams) (user.UserNoPassword, error) {
-	if params.Password != params.ConfirmPassword {
-		return user.UserNoPassword{}, ErrPasswordConfirmMismatch
+func (s *Service) SignUp(ctx context.Context, params SignUpParams) (user.UserNoPassword, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(params.Password), 12)
+	if err != nil {
+		return user.UserNoPassword{}, err
 	}
 
-	return s.userService.CreateUser(user.CreateUserParams{
+	return s.userService.CreateUser(ctx, user.CreateUserParams{
 		Email:     params.Email,
 		FirstName: params.FirstName,
 		LastName:  params.LastName,
-		Password:  params.Password,
+		Password:  string(hashedPassword),
 	})
 }
