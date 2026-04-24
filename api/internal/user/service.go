@@ -30,6 +30,5 @@ func (s *Service) CreateUser(ctx context.Context, params CreateUserParams) (User
 		LastName:  u.LastName,
 		Avatar:    u.Avatar,
 		CreatedAt: u.CreatedAt,
-		UpdatedAt: u.UpdatedAt,
 	}, nil
 }
