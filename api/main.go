@@ -3,29 +3,31 @@ package main
 import (
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
-	"github.com/joho/godotenv"
 	"github.com/noel-vega/finances/api/internal/auth"
 	"github.com/noel-vega/finances/api/internal/user"
 )
 
 func main() {
-	godotenv.Load()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
 	r := gin.Default()
 	config, err := NewConfig()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to load config: %v\n", err)
+		slog.Error(fmt.Sprintf("Unable to connect to database: %v\n", err))
 		os.Exit(1)
 	}
 
 	db, err := sqlx.Connect("pgx", config.DatabaseConnectionString)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		slog.Error(fmt.Sprintf("Unable to connect to database: %v\n", err))
 		os.Exit(1)
 	}
 

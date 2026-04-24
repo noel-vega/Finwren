@@ -2,6 +2,8 @@ package auth
 
 import (
 	"errors"
+	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -43,6 +45,8 @@ type SignUpBody struct {
 }
 
 func (h *Handler) SignUp(ctx *gin.Context) {
+	log.Print("Signing up...")
+	slog.Info("Signing up...")
 	body := SignUpBody{}
 
 	if err := ctx.ShouldBind(&body); err != nil {
