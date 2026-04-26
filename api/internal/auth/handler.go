@@ -2,13 +2,11 @@ package auth
 
 import (
 	"errors"
-	"log"
-	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/noel-vega/finances/api/internal/apierrors"
+	"github.com/noel-vega/finances/api/internal/apierr"
 	"github.com/noel-vega/finances/api/internal/user"
 )
 
@@ -27,41 +25,40 @@ type SignInBody struct {
 	Password string `json:"password" binding:"required"`
 }
 
-func (h *Handler) SignIn(c *gin.Context) {
+func (h *Handler) SignIn(ctx *gin.Context) {
 	body := SignInBody{}
 
-	if err := c.Bind(body); err != nil {
-		c.AbortWithError(http.StatusBadRequest, err)
+	if err := ctx.Bind(body); err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 }
 
 type SignUpBody struct {
-	Email           string `json:"email" binding:"required,email"`
-	FirstName       string `json:"firstName" binding:"required"`
-	LastName        string `json:"lastName" binding:"required"`
-	Password        string `json:"password" binding:"required,min=12"`
+	Email           string `json:"email" binding:"required,email,max=254"`
+	FirstName       string `json:"firstName" binding:"required,max=100"`
+	LastName        string `json:"lastName" binding:"required,max=100"`
+	Password        string `json:"password" binding:"required,min=12,max=72"`
 	ConfirmPassword string `json:"confirmPassword" binding:"required,eqfield=Password"`
 }
 
 func (h *Handler) SignUp(ctx *gin.Context) {
-	log.Print("Signing up...")
-	slog.Info("Signing up...")
 	body := SignUpBody{}
 
-	if err := ctx.ShouldBind(&body); err != nil {
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.Error(err)
 		var ve validator.ValidationErrors
 
-		problems := []apierrors.ProblemDetailError{}
+		problems := []apierr.ProblemDetailError{}
 		if errors.As(err, &ve) {
 			for _, fe := range ve {
-				problems = append(problems, apierrors.FromFieldError(fe))
+				problems = append(problems, apierr.FromFieldError(fe))
 			}
-			apierrors.NewBadRequest(ctx, "One or more fields failed validation", problems)
+			apierr.NewBadRequest(ctx, "One or more fields failed validation", problems)
 			return
 		}
 
-		apierrors.NewBadRequest(ctx, "Malformed request body.", nil)
+		apierr.NewBadRequest(ctx, "Malformed request body.", nil)
 		return
 	}
 
@@ -72,11 +69,12 @@ func (h *Handler) SignUp(ctx *gin.Context) {
 		Password:  body.Password,
 	})
 	if err != nil {
+		ctx.Error(err)
 		if errors.Is(err, user.ErrEmailExists) {
-			apierrors.NewConflict(ctx, "User with email exists", nil)
+			apierr.NewConflict(ctx, "User with email exists", nil)
 			return
 		}
-		apierrors.NewInternalServerError(ctx)
+		apierr.NewInternalServerError(ctx)
 		return
 	}
 

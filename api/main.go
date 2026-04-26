@@ -11,6 +11,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 	"github.com/noel-vega/finances/api/internal/auth"
+	middleware "github.com/noel-vega/finances/api/internal/middelware"
 	"github.com/noel-vega/finances/api/internal/user"
 )
 
@@ -18,22 +19,25 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
-	r := gin.Default()
 	config, err := NewConfig()
 	if err != nil {
-		slog.Error(fmt.Sprintf("Unable to connect to database: %v\n", err))
+		slog.Error(err.Error())
 		os.Exit(1)
 	}
 
 	db, err := sqlx.Connect("pgx", config.DatabaseConnectionString)
 	if err != nil {
-		slog.Error(fmt.Sprintf("Unable to connect to database: %v\n", err))
+		slog.Error(err.Error())
 		os.Exit(1)
 	}
 
 	userService := user.NewService(user.NewRepository(db))
 	authService := auth.NewService(userService)
 	authHandler := auth.NewHandler(authService)
+
+	r := gin.New()
+	r.Use(middleware.RequestID())
+	r.Use(middleware.Logger())
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{

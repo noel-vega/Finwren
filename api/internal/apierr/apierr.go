@@ -1,4 +1,4 @@
-package apierrors
+package apierr
 
 import (
 	"net/http"
@@ -18,7 +18,7 @@ type ProblemDetail struct {
 	Status int                  `json:"status"`
 	Title  string               `json:"title"`
 	Detail string               `json:"detail"`
-	Errors []ProblemDetailError `json:"errors"`
+	Errors []ProblemDetailError `json:"errors,omitempty"`
 }
 
 func NewBadRequest(ctx *gin.Context, detail string, problems []ProblemDetailError) {

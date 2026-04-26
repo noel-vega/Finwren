@@ -1,4 +1,4 @@
-package apierrors
+package apierr
 
 import (
 	"fmt"
@@ -35,7 +35,7 @@ func FromFieldError(fe validator.FieldError) ProblemDetailError {
 		params = map[string]string{"max": fe.Param()}
 		detail = fmt.Sprintf("%s must be at most %s characters", field, fe.Param())
 	case "eqfield":
-		other := fe.Param()
+		other := lowerFirst(fe.Param())
 		params = map[string]string{"otherField": other}
 		detail = fmt.Sprintf("%s must match %s", field, other)
 	default:
