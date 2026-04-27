@@ -42,6 +42,11 @@ type SignUpBody struct {
 	ConfirmPassword string `json:"confirmPassword" binding:"required,eqfield=Password"`
 }
 
+type SignUpResponse struct {
+	User        user.UserNoPassword `json:"user"`
+	AccessToken string              `json:"accessToken"`
+}
+
 func (h *Handler) SignUp(ctx *gin.Context) {
 	body := SignUpBody{}
 
@@ -78,7 +83,16 @@ func (h *Handler) SignUp(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, u)
+	token, err := h.service.createAccessToken(int(u.ID))
+	if err != nil {
+		apierr.NewInternalServerError(ctx)
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, SignUpResponse{
+		User:        u,
+		AccessToken: token,
+	})
 }
 
 func (h *Handler) SignOut() {}

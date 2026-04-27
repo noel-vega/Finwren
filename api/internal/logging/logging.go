@@ -12,8 +12,10 @@ type contextHandler struct {
 	slog.Handler
 }
 
-func New(w io.Writer) *slog.Logger {
-	base := slog.NewJSONHandler(w, nil)
+func New(w io.Writer, level slog.Level) *slog.Logger {
+	base := slog.NewJSONHandler(w, &slog.HandlerOptions{
+		Level: level,
+	})
 	return slog.New(&contextHandler{Handler: base})
 }
 

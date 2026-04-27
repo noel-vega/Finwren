@@ -11,28 +11,32 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 	"github.com/noel-vega/finances/api/internal/auth"
+	"github.com/noel-vega/finances/api/internal/config"
 	"github.com/noel-vega/finances/api/internal/logging"
 	middleware "github.com/noel-vega/finances/api/internal/middleware"
 	"github.com/noel-vega/finances/api/internal/user"
 )
 
 func main() {
-	slog.SetDefault(logging.New(os.Stdout))
-
-	config, err := NewConfig()
-	if err != nil {
-		slog.Error(err.Error())
+	slog.SetDefault(logging.New(os.Stdout, slog.LevelInfo))
+	cfg, errs := config.New()
+	if len(errs) > 0 {
+		for _, err := range errs {
+			slog.Error("invalid env variable", "error", err.Error())
+		}
 		os.Exit(1)
 	}
 
-	db, err := sqlx.Connect("pgx", config.DatabaseConnectionString)
+	slog.SetDefault(logging.New(os.Stdout, cfg.LogLevel))
+
+	db, err := sqlx.Connect("pgx", cfg.DatabaseConnectionString)
 	if err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)
 	}
 
 	userService := user.NewService(user.NewRepository(db))
-	authService := auth.NewService(userService)
+	authService := auth.NewService(userService, cfg.Domain, cfg.JWTSecret)
 	authHandler := auth.NewHandler(authService)
 
 	r := gin.New()
@@ -50,7 +54,7 @@ func main() {
 	authRoute.POST("/sign-up", authHandler.SignUp)
 
 	// Start server on port 8080 (default)
-	if err := r.Run(fmt.Sprintf(":%d", config.Port)); err != nil {
+	if err := r.Run(fmt.Sprintf(":%d", cfg.Port)); err != nil {
 		log.Fatalf("failed to run server: %v", err)
 	}
 }
