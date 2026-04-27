@@ -21,6 +21,7 @@ type Config struct {
 	DatabaseConnectionString string
 	Environment              Environment
 	JWTSecret                string
+	ResendKey                string
 }
 
 func New() (*Config, []error) {
@@ -47,6 +48,11 @@ func New() (*Config, []error) {
 		issues = append(issues, err)
 	}
 
+	resendKey, err := getResendApiKey()
+	if err != nil {
+		issues = append(issues, err)
+	}
+
 	jwtSecret, err := getJWTSecret()
 	if err != nil {
 		issues = append(issues, err)
@@ -58,6 +64,7 @@ func New() (*Config, []error) {
 		Environment:              env,
 		Domain:                   domain,
 		JWTSecret:                jwtSecret,
+		ResendKey:                resendKey,
 	}, issues
 }
 
@@ -101,6 +108,14 @@ func getDomain() (string, error) {
 	domain := os.Getenv("DOMAIN")
 	if domain == "" {
 		return "", errors.New("DOMAIN not set")
+	}
+	return domain, nil
+}
+
+func getResendApiKey() (string, error) {
+	domain := os.Getenv("RESEND_API_KEY")
+	if domain == "" {
+		return "", errors.New("RESEND_API_KEY not set")
 	}
 	return domain, nil
 }

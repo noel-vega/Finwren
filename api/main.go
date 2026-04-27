@@ -12,6 +12,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/noel-vega/finances/api/internal/auth"
 	"github.com/noel-vega/finances/api/internal/config"
+	"github.com/noel-vega/finances/api/internal/email"
 	"github.com/noel-vega/finances/api/internal/logging"
 	middleware "github.com/noel-vega/finances/api/internal/middleware"
 	"github.com/noel-vega/finances/api/internal/user"
@@ -35,7 +36,8 @@ func main() {
 	}
 
 	userService := user.NewService(user.NewRepository(db))
-	authService, err := auth.NewService(userService, cfg.Domain, cfg.JWTSecret)
+	emailService := email.NewService(cfg.ResendKey)
+	authService, err := auth.NewService(userService, emailService, cfg.Domain, cfg.JWTSecret)
 	if err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)

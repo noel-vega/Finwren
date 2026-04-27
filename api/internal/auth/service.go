@@ -9,19 +9,26 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/noel-vega/finances/api/internal/email"
 	"github.com/noel-vega/finances/api/internal/user"
 	"golang.org/x/crypto/bcrypt"
 )
 
+type AuthSender interface {
+	SendMagicLink(context.Context, string, email.MagicLinkData) error
+}
+
 type Service struct {
 	userService *user.Service
+	email       AuthSender
 	domain      string
 	jwtSecret   string
 }
 
-func NewService(userService *user.Service, domain, jwtSecret string) (*Service, error) {
+func NewService(userService *user.Service, email AuthSender, domain, jwtSecret string) (*Service, error) {
 	service := &Service{
 		userService,
+		email,
 		domain,
 		jwtSecret,
 	}
@@ -49,12 +56,23 @@ func (s *Service) SignUp(ctx context.Context, params SignUpParams) (user.UserNoP
 		return user.UserNoPassword{}, err
 	}
 
-	return s.userService.CreateUser(ctx, user.CreateUserParams{
+	u, err := s.userService.CreateUser(ctx, user.CreateUserParams{
 		Email:     params.Email,
 		FirstName: params.FirstName,
 		LastName:  params.LastName,
 		Password:  string(hash),
 	})
+	if err != nil {
+		return u, err
+	}
+
+	err = s.email.SendMagicLink(ctx, u.Email, email.MagicLinkData{
+		Name:             u.FirstName,
+		Link:             "www.youtube.com",
+		ExpiresInMinutes: 15,
+	})
+
+	return u, err
 }
 
 type Token struct {
