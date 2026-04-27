@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"log/slog"
 	"strings"
 )
 
@@ -22,6 +23,10 @@ func (s *Service) CreateUser(ctx context.Context, params CreateUserParams) (User
 	if err != nil {
 		return UserNoPassword{}, err
 	}
+
+	slog.InfoContext(ctx, "user created",
+		slog.Int("user_id", int(u.ID)),
+	)
 
 	return UserNoPassword{
 		ID:        u.ID,

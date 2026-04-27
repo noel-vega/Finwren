@@ -12,7 +12,6 @@ func Logger() gin.HandlerFunc {
 		start := time.Now()
 		ctx.Next()
 
-		rid := ctx.GetString(ridContextKey)
 		level := slog.LevelInfo
 		status := ctx.Writer.Status()
 
@@ -26,15 +25,14 @@ func Logger() gin.HandlerFunc {
 		attrs := []slog.Attr{
 			slog.String("method", ctx.Request.Method),
 			slog.String("path", ctx.Request.URL.Path),
-			slog.Int("status", ctx.Writer.Status()),
+			slog.Int("status", status),
 			slog.Duration("latency", time.Since(start)),
-			slog.String("request_id", rid),
 		}
 
 		if len(ctx.Errors) > 0 {
 			attrs = append(attrs, slog.String("errors", ctx.Errors.String()))
 		}
 
-		slog.LogAttrs(ctx, level, "request", attrs...)
+		slog.LogAttrs(ctx.Request.Context(), level, "request", attrs...)
 	}
 }

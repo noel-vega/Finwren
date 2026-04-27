@@ -11,13 +11,13 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 	"github.com/noel-vega/finances/api/internal/auth"
-	middleware "github.com/noel-vega/finances/api/internal/middelware"
+	"github.com/noel-vega/finances/api/internal/logging"
+	middleware "github.com/noel-vega/finances/api/internal/middleware"
 	"github.com/noel-vega/finances/api/internal/user"
 )
 
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	slog.SetDefault(logger)
+	slog.SetDefault(logging.New(os.Stdout))
 
 	config, err := NewConfig()
 	if err != nil {

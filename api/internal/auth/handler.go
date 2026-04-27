@@ -62,7 +62,7 @@ func (h *Handler) SignUp(ctx *gin.Context) {
 		return
 	}
 
-	u, err := h.service.SignUp(ctx, SignUpParams{
+	u, err := h.service.SignUp(ctx.Request.Context(), SignUpParams{
 		Email:     body.Email,
 		FirstName: body.FirstName,
 		LastName:  body.LastName,
