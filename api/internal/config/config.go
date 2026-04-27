@@ -17,6 +17,7 @@ const (
 
 type Config struct {
 	Domain                   string
+	WebBaseURL               string
 	Port                     int
 	DatabaseConnectionString string
 	Environment              Environment
@@ -48,7 +49,12 @@ func New() (*Config, []error) {
 		issues = append(issues, err)
 	}
 
-	resendKey, err := getResendApiKey()
+	resendKey, err := getResendAPIKey()
+	if err != nil {
+		issues = append(issues, err)
+	}
+
+	webBaseURL, err := getWebBaseURL()
 	if err != nil {
 		issues = append(issues, err)
 	}
@@ -63,6 +69,7 @@ func New() (*Config, []error) {
 		DatabaseConnectionString: dbConnString,
 		Environment:              env,
 		Domain:                   domain,
+		WebBaseURL:               webBaseURL,
 		JWTSecret:                jwtSecret,
 		ResendKey:                resendKey,
 	}, issues
@@ -112,12 +119,20 @@ func getDomain() (string, error) {
 	return domain, nil
 }
 
-func getResendApiKey() (string, error) {
-	domain := os.Getenv("RESEND_API_KEY")
-	if domain == "" {
+func getResendAPIKey() (string, error) {
+	key := os.Getenv("RESEND_API_KEY")
+	if key == "" {
 		return "", errors.New("RESEND_API_KEY not set")
 	}
-	return domain, nil
+	return key, nil
+}
+
+func getWebBaseURL() (string, error) {
+	webURL := os.Getenv("WEB_BASE_URL")
+	if webURL == "" {
+		return "", errors.New("WEB_BASE_URL not set")
+	}
+	return webURL, nil
 }
 
 func getJWTSecret() (string, error) {

@@ -41,7 +41,7 @@ type VerifyEmailData struct {
 }
 
 func (s *Service) SendVerifyEmail(ctx context.Context, to string, data VerifyEmailData) error {
-	html, err := render("magic_link.html", data)
+	html, err := render("verify_email.html", data)
 	if err != nil {
 		return err
 	}

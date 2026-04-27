@@ -23,20 +23,6 @@ func NewHandler(service *Service, env config.Environment) *Handler {
 	}
 }
 
-type SignInBody struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
-}
-
-func (h *Handler) SignIn(ctx *gin.Context) {
-	body := SignInBody{}
-
-	if err := ctx.Bind(body); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-}
-
 type SignUpBody struct {
 	Email           string `json:"email" binding:"required,email,max=254"`
 	FirstName       string `json:"firstName" binding:"required,max=100"`
@@ -111,5 +97,3 @@ func (h *Handler) SignUp(ctx *gin.Context) {
 		AccessToken: accessToken.Value,
 	})
 }
-
-func (h *Handler) SignOut() {}

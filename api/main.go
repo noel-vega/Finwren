@@ -37,7 +37,7 @@ func main() {
 
 	userService := user.NewService(user.NewRepository(db))
 	emailService := email.NewService(cfg.ResendKey)
-	authService, err := auth.NewService(userService, emailService, cfg.Domain, cfg.JWTSecret)
+	authService, err := auth.NewService(db, userService, emailService, cfg.Domain, cfg.WebBaseURL, cfg.JWTSecret)
 	if err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)
@@ -63,7 +63,6 @@ func main() {
 	})
 
 	authRoute := r.Group("/auth")
-	authRoute.POST("/sign-in", authHandler.SignIn)
 	authRoute.POST("/sign-up", authHandler.SignUp)
 
 	// Start server on port 8080 (default)

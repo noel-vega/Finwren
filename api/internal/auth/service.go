@@ -5,10 +5,12 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"net/url"
 	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jmoiron/sqlx"
 	"github.com/noel-vega/finances/api/internal/email"
 	"github.com/noel-vega/finances/api/internal/user"
 	"golang.org/x/crypto/bcrypt"
@@ -19,18 +21,23 @@ type AuthSender interface {
 }
 
 type Service struct {
-	userService *user.Service
-	email       AuthSender
-	domain      string
-	jwtSecret   string
+	webBaseURL string
+	user       *user.Service
+	email      AuthSender
+	domain     string
+	jwtSecret  string
+	tokens     *EmailTokensRepository
 }
 
-func NewService(userService *user.Service, email AuthSender, domain, jwtSecret string) (*Service, error) {
+func NewService(db *sqlx.DB, userService *user.Service, email AuthSender, domain, webBaseURL, jwtSecret string) (*Service, error) {
+	tokens := NewEmailTokensRepository(db)
 	service := &Service{
-		userService,
-		email,
-		domain,
-		jwtSecret,
+		user:       userService,
+		email:      email,
+		domain:     domain,
+		webBaseURL: webBaseURL,
+		jwtSecret:  jwtSecret,
+		tokens:     tokens,
 	}
 
 	if _, err := service.createAccessToken(0); err != nil {
@@ -38,8 +45,6 @@ func NewService(userService *user.Service, email AuthSender, domain, jwtSecret s
 	}
 	return service, nil
 }
-
-func (s *Service) SignIn() {}
 
 type SignUpParams struct {
 	Email     string
@@ -56,7 +61,7 @@ func (s *Service) SignUp(ctx context.Context, params SignUpParams) (user.UserNoP
 		return user.UserNoPassword{}, err
 	}
 
-	u, err := s.userService.CreateUser(ctx, user.CreateUserParams{
+	u, err := s.user.CreateUser(ctx, user.CreateUserParams{
 		Email:     params.Email,
 		FirstName: params.FirstName,
 		LastName:  params.LastName,
@@ -66,21 +71,53 @@ func (s *Service) SignUp(ctx context.Context, params SignUpParams) (user.UserNoP
 		return u, err
 	}
 
+	raw, tokenHash, err := generateRawToken()
+	if err != nil {
+		return u, err
+	}
+
+	err = s.tokens.Create(ctx, CreateTokenParams{
+		UserID:    u.ID,
+		TokenHash: tokenHash,
+		Purpose:   TokenPurposeVerifyEmail,
+		ExpiresAt: time.Now().Add(time.Hour * 8),
+	})
+	if err != nil {
+		return u, err
+	}
+
+	verifyLink, err := s.buildVerifyEmailLink(raw)
+	if err != nil {
+		return u, err
+	}
+
 	err = s.email.SendVerifyEmail(ctx, u.Email, email.VerifyEmailData{
 		Name:           u.FirstName,
-		Link:           "www.youtube.com",
+		Link:           verifyLink,
 		ExpiresInHours: 8,
 	})
 
 	return u, err
 }
 
-type Token struct {
+func (s *Service) buildVerifyEmailLink(rawToken string) (string, error) {
+	u, err := url.Parse(s.webBaseURL)
+	if err != nil {
+		return "", fmt.Errorf("invalid BASE_URL: %w", err)
+	}
+	u.Path = "/auth/verify"
+	q := u.Query()
+	q.Set("token", rawToken)
+	u.RawQuery = q.Encode()
+	return u.String(), nil
+}
+
+type JWTToken struct {
 	Value    string
 	Duration time.Duration
 }
 
-func (s *Service) createToken(userID int32, duration time.Duration) (Token, error) {
+func (s *Service) createJWTToken(userID int32, duration time.Duration) (JWTToken, error) {
 	now := time.Now()
 	claims := jwt.RegisteredClaims{
 		Subject:   strconv.Itoa(int(userID)),
@@ -92,18 +129,18 @@ func (s *Service) createToken(userID int32, duration time.Duration) (Token, erro
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenStr, err := token.SignedString([]byte(s.jwtSecret))
 	if err != nil {
-		return Token{}, err
+		return JWTToken{}, err
 	}
-	return Token{
+	return JWTToken{
 		Value:    tokenStr,
 		Duration: duration,
 	}, nil
 }
 
-func (s *Service) createAccessToken(userID int32) (Token, error) {
-	return s.createToken(userID, time.Minute*15)
+func (s *Service) createAccessToken(userID int32) (JWTToken, error) {
+	return s.createJWTToken(userID, time.Minute*15)
 }
 
-func (s *Service) createRefreshToken(userID int32) (Token, error) {
-	return s.createToken(userID, time.Hour*24*7)
+func (s *Service) createRefreshToken(userID int32) (JWTToken, error) {
+	return s.createJWTToken(userID, time.Hour*24*7)
 }
