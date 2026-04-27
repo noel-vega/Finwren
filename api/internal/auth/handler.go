@@ -7,16 +7,19 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/noel-vega/finances/api/internal/apierr"
+	"github.com/noel-vega/finances/api/internal/config"
 	"github.com/noel-vega/finances/api/internal/user"
 )
 
 type Handler struct {
 	service *Service
+	env     config.Environment
 }
 
-func NewHandler(service *Service) *Handler {
+func NewHandler(service *Service, env config.Environment) *Handler {
 	return &Handler{
 		service,
+		env,
 	}
 }
 
@@ -83,15 +86,29 @@ func (h *Handler) SignUp(ctx *gin.Context) {
 		return
 	}
 
-	token, err := h.service.createAccessToken(int(u.ID))
+	accessToken, err := h.service.createAccessToken(u.ID)
 	if err != nil {
 		apierr.NewInternalServerError(ctx)
 		return
 	}
 
+	refreshToken, err := h.service.createRefreshToken(u.ID)
+	if err != nil {
+		apierr.NewInternalServerError(ctx)
+		return
+	}
+
+	ctx.SetCookieData(&http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken.Value,
+		MaxAge:   int(refreshToken.Duration.Seconds()),
+		Secure:   h.env == config.EnvProduction,
+		HttpOnly: true,
+	})
+
 	ctx.JSON(http.StatusCreated, SignUpResponse{
 		User:        u,
-		AccessToken: token,
+		AccessToken: accessToken.Value,
 	})
 }
 

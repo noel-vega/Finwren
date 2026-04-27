@@ -18,7 +18,6 @@ import (
 )
 
 func main() {
-	slog.SetDefault(logging.New(os.Stdout, slog.LevelInfo))
 	cfg, errs := config.New()
 	if len(errs) > 0 {
 		for _, err := range errs {
@@ -27,7 +26,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	slog.SetDefault(logging.New(os.Stdout, cfg.LogLevel))
+	slog.SetDefault(logging.New(os.Stdout, cfg.Environment))
 
 	db, err := sqlx.Connect("pgx", cfg.DatabaseConnectionString)
 	if err != nil {
@@ -36,14 +35,26 @@ func main() {
 	}
 
 	userService := user.NewService(user.NewRepository(db))
-	authService := auth.NewService(userService, cfg.Domain, cfg.JWTSecret)
-	authHandler := auth.NewHandler(authService)
+	authService, err := auth.NewService(userService, cfg.Domain, cfg.JWTSecret)
+	if err != nil {
+		slog.Error(err.Error())
+		os.Exit(1)
+	}
+	authHandler := auth.NewHandler(authService, cfg.Environment)
 
 	r := gin.New()
 	r.Use(middleware.RequestID())
 	r.Use(middleware.Logger())
+	r.Use(gin.Recovery())
 
 	r.GET("/health", func(c *gin.Context) {
+		err := db.Ping()
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{
+				"message": "unable to connect to db",
+			})
+			return
+		}
 		c.JSON(http.StatusOK, gin.H{
 			"message": "healthy",
 		})

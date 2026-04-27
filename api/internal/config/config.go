@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"log/slog"
 	"os"
 	"strconv"
 
@@ -21,7 +20,6 @@ type Config struct {
 	Port                     int
 	DatabaseConnectionString string
 	Environment              Environment
-	LogLevel                 slog.Level
 	JWTSecret                string
 }
 
@@ -32,11 +30,6 @@ func New() (*Config, []error) {
 	env, err := getEnvironment()
 	if err != nil {
 		issues = append(issues, err)
-	}
-
-	level := slog.LevelInfo
-	if env == EnvDevelopment {
-		level = slog.LevelDebug
 	}
 
 	port, err := getPort()
@@ -63,7 +56,6 @@ func New() (*Config, []error) {
 		Port:                     port,
 		DatabaseConnectionString: dbConnString,
 		Environment:              env,
-		LogLevel:                 level,
 		Domain:                   domain,
 		JWTSecret:                jwtSecret,
 	}, issues
