@@ -15,7 +15,7 @@ import (
 )
 
 type AuthSender interface {
-	SendMagicLink(context.Context, string, email.MagicLinkData) error
+	SendVerifyEmail(context.Context, string, email.VerifyEmailData) error
 }
 
 type Service struct {
@@ -66,10 +66,10 @@ func (s *Service) SignUp(ctx context.Context, params SignUpParams) (user.UserNoP
 		return u, err
 	}
 
-	err = s.email.SendMagicLink(ctx, u.Email, email.MagicLinkData{
-		Name:             u.FirstName,
-		Link:             "www.youtube.com",
-		ExpiresInMinutes: 15,
+	err = s.email.SendVerifyEmail(ctx, u.Email, email.VerifyEmailData{
+		Name:           u.FirstName,
+		Link:           "www.youtube.com",
+		ExpiresInHours: 8,
 	})
 
 	return u, err

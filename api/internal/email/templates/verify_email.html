@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <body style="font-family: system-ui, sans-serif; max-width: 560px; margin: 40px auto;">
+    <h1>Verify your email</h1>
+    <p>Hi {{.Name}},</p>
+    <p>Welcome to moolatta. Click below to verify your email address and finish setting up your account.</p>
+    <p>
+      <a href="{{.Link}}"
+         style="display:inline-block;padding:12px 20px;background:#000;color:#fff;text-decoration:none;border-radius:6px;">
+        Verify email
+      </a>
+    </p>
+    <p style="color:#666;font-size:14px;">
+      This link expires in {{.ExpiresInHours}} hours.
+    </p>
+    <p style="color:#666;font-size:14px;">
+      If you didn't create a moolatta account, you can safely ignore this email.
+    </p>
+  </body>
+</html>

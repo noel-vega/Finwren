@@ -34,13 +34,13 @@ func (s *Service) send(ctx context.Context, params SendParams) error {
 	return err
 }
 
-type MagicLinkData struct {
-	Name             string
-	Link             string
-	ExpiresInMinutes int
+type VerifyEmailData struct {
+	Name           string
+	Link           string
+	ExpiresInHours int
 }
 
-func (s *Service) SendMagicLink(ctx context.Context, to string, data MagicLinkData) error {
+func (s *Service) SendVerifyEmail(ctx context.Context, to string, data VerifyEmailData) error {
 	html, err := render("magic_link.html", data)
 	if err != nil {
 		return err
