@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
@@ -48,6 +49,11 @@ func main() {
 	r.Use(middleware.RequestID())
 	r.Use(middleware.Logger())
 	r.Use(gin.Recovery())
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{cfg.WebBaseURL},
+		AllowCredentials: true,
+		AllowHeaders:     []string{"Content-Type"},
+	}))
 
 	r.GET("/health", func(c *gin.Context) {
 		err := db.Ping()
@@ -63,7 +69,7 @@ func main() {
 	})
 
 	authRoute := r.Group("/auth")
-	authRoute.POST("/sign-up", authHandler.SignUp)
+	authRoute.POST("/signup", authHandler.SignUp)
 
 	// Start server on port 8080 (default)
 	if err := r.Run(fmt.Sprintf(":%d", cfg.Port)); err != nil {

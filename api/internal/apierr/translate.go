@@ -25,15 +25,15 @@ func FromFieldError(fe validator.FieldError) ProblemDetailError {
 	)
 	switch fe.Tag() {
 	case "required":
-		detail = fmt.Sprintf("%s is required", field)
+		detail = "required"
 	case "email":
-		detail = fmt.Sprintf("%s must be a valid email address", field)
+		detail = "invalid email address"
 	case "min":
 		params = map[string]string{"min": fe.Param()}
-		detail = fmt.Sprintf("%s must be at least %s characters", field, fe.Param())
+		detail = fmt.Sprintf("must be at least %s characters", fe.Param())
 	case "max":
 		params = map[string]string{"max": fe.Param()}
-		detail = fmt.Sprintf("%s must be at most %s characters", field, fe.Param())
+		detail = fmt.Sprintf("must be at most %s characters", fe.Param())
 	case "eqfield":
 		other := lowerFirst(fe.Param())
 		params = map[string]string{"otherField": other}
