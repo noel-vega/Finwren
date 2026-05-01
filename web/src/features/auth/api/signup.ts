@@ -1,6 +1,6 @@
 
 import { ApiError, ProblemDetailSchema } from "@/lib/api-errors"
-import { useMutation } from "@tanstack/react-query"
+import { mutationOptions, useMutation, type UseMutationOptions } from "@tanstack/react-query"
 import z from "zod"
 
 export const SignUpRequestParamsSchema = z.object({
@@ -35,6 +35,8 @@ export const SignUpResponseSchema = z.object({
   accessToken: z.string()
 })
 
+export type SignUpResponse = z.infer<typeof SignUpResponseSchema>
+
 
 export async function signup(params: SignUpRequestParams) {
   const url = new URL("/auth/signup", import.meta.env.VITE_API_BASE_URL)
@@ -56,8 +58,18 @@ export async function signup(params: SignUpRequestParams) {
 
 }
 
-export function useSignUp() {
+
+function getUseSignupOptions() {
+  return mutationOptions({
+    mutationFn: signup,
+  })
+}
+
+type Options = Omit<ReturnType<typeof getUseSignupOptions>, "mutationFn">
+
+export function useSignup(options?: Options) {
   return useMutation({
+    ...options,
     mutationFn: signup,
   })
 }

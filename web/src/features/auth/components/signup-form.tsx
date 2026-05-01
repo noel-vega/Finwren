@@ -1,14 +1,12 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm } from "react-hook-form"
-import { SignUpRequestParamsSchema, useSignUp } from "../api/signup"
+import { SignUpRequestParamsSchema, useSignup } from "../api/signup"
 import { ApiError, setFormFieldErrors } from "@/lib/api-errors"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
 export function SignupForm() {
-
-
   const form = useForm({
     resolver: zodResolver(SignUpRequestParamsSchema),
     defaultValues: {
@@ -20,32 +18,31 @@ export function SignupForm() {
     }
   })
 
-  const signup = useSignUp()
-
-  const isDisabled = !form.formState.isValid || signup.isPending || signup.isSuccess
-
-  const onSubmit = form.handleSubmit((data) => {
-    signup.mutate(data, {
-      onError: (err) => {
-        if (err instanceof ApiError) {
-          if (err.problem.status === 400 && err.problem.errors) {
-            setFormFieldErrors(form, err.problem.errors)
-            return
-          }
-
-          if (err.problem.status === 409) {
-            form.setError("email", { message: err.problem.detail })
-            return
-          }
-          const message = err.problem.status >= 500 ? "Something went wrong. Please try again." : err.problem.detail
-          form.setError("root", { message })
+  const signup = useSignup({
+    onError: (err) => {
+      if (err instanceof ApiError) {
+        if (err.problem.status === 400 && err.problem.errors) {
+          setFormFieldErrors(form, err.problem.errors)
           return
         }
 
-        form.setError("root", { message: `Something went wrong: ${err.message}` })
+        if (err.problem.status === 409) {
+          form.setError("email", { message: err.problem.detail })
+          return
+        }
+        const message = err.problem.status >= 500 ? "Something went wrong. Please try again." : err.problem.detail
+        form.setError("root", { message })
+        return
       }
-    })
+
+      form.setError("root", { message: `Something went wrong: ${err.message}` })
+    }
   })
+
+
+  const onSubmit = form.handleSubmit((data) => signup.mutate(data))
+
+  const isDisabled = !form.formState.isValid || signup.isPending || signup.isSuccess
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       {form.formState.errors.root && (

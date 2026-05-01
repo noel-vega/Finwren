@@ -1,6 +1,5 @@
 import { SignupForm } from "../components/signup-form";
 
-
 export function SignupView() {
   return (
     <div className="h-dvh flex items-center justify-center">
