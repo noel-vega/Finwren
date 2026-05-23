@@ -15,7 +15,7 @@ import (
 	"github.com/noel-vega/finances/api/internal/config"
 	"github.com/noel-vega/finances/api/internal/email"
 	"github.com/noel-vega/finances/api/internal/logging"
-	middleware "github.com/noel-vega/finances/api/internal/middleware"
+	"github.com/noel-vega/finances/api/internal/middleware"
 	"github.com/noel-vega/finances/api/internal/user"
 )
 
